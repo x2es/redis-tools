@@ -4,6 +4,12 @@ redis-keys-stat
 
 This tool scan Redis keys and prints data structure and stat.
 
+## Install
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Motivation
 
 Easy way to get idea about:
