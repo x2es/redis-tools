@@ -55,3 +55,4 @@ stat:
   processed:*
 ```
 
+For big datasets it takes some time to scan all keys.
