@@ -1,0 +1,83 @@
+#!/usr/bin/python
+
+import sys
+import re
+import redis
+import redis_keys_index
+
+#
+# @param {String} url: in format 'redis://host:port/db'
+#
+def parse_redis_url(url):
+    match = re.search('redis://(.+)/(\d+)', url)
+    if match is None:
+        raise Exception("wrong redis url '{0}'".format(url))
+
+    host_port = match.group(1)
+    db = match.group(2)
+
+    if host_port is None or db is None:
+        raise Exception("wrong redis url '{0}'".format(url))
+
+    list_host_port = host_port.split(':')
+
+    if len(list_host_port) < 1:
+        raise Exception("wrong redis url '{0}'".format(url))
+
+    port = 6379
+    if len(list_host_port) == 2:
+        port = list_host_port[1]
+
+    return {
+        'host': list_host_port[0],
+        'port': int(port),
+        'db': int(db)
+    }
+
+#
+# Parse system arguments
+# @param {sys.argv} argv
+# @return {Dictionary(redis(url, host, port, db))} 
+#
+def parse_argv(argv):
+    if len(argv) < 2:
+        print
+        print "Usage: redis-keys-stat <redis://host:port/db>"
+        print
+        raise Exception("wrong arguments") 
+
+    redis_url = argv[1]
+    parsed_redis = parse_redis_url(redis_url)
+    parsed_argv = {
+        'redis': parsed_redis
+    }
+    parsed_argv['redis']['url'] = redis_url
+
+    return parsed_argv
+    
+
+def main(opts):
+    redis_opts = opts['redis']
+    redis_url=redis_opts['url']
+    print "Redis: {0}".format(redis_url)
+
+    r = redis.StrictRedis(host=redis_opts['host'], port=redis_opts['port'], db=redis_opts['db'])
+    rki = redis_keys_index.RedisKeysIndex({ 'delimiter': ':' })
+
+    # TODO: only verbose
+    print "Start scanning all keys"
+
+    # Hint: may be used option match="key:*"
+    for key in r.scan_iter():
+        rki.treat(key)
+
+    print " > Sorting keys ..." 
+    keys = rki.stat.keys()
+    keys.sort()
+
+    print "Result" 
+    for key in keys:
+        print '{0} ({1})'.format(key, rki.statCount(key))
+
+if __name__ == "__main__":
+    main(parse_argv(sys.argv))

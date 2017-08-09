@@ -1,0 +1,3 @@
+#!/bin/bash
+
+watchmedo shell-command -WR -c 'clear; for test in *_test.py; do python $test; done' -p '*.py'
